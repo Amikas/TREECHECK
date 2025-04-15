@@ -1,9 +1,12 @@
+import sys
+
 class BSTNode:
     def __init__(self, val=None):
         self.left = None
         self.right = None
         self.val = val
         self.height = 1
+        self.balance_factor = 0
     def getHeight(node):
         if not node:
             return 0
@@ -25,6 +28,25 @@ class BSTNode:
             else:
                 self.right = BSTNode(val)
         self.height = 1 + max(BSTNode.getHeight(self.left), BSTNode.getHeight(self.right))
+    def calculate_balance_factors(self):
+        if self.left:
+            self.left.calculate_balance_factors()
+        if self.right:
+            self.right.calculate_balance_factors()
+
+        if self.left:
+            left_height = self.left.height
+        else:
+            left_height = 0
+
+        if self.right:
+            right_height = self.right.height
+        else:
+            right_height = 0
+
+        self.height = 1 + max(left_height, right_height)
+        self.balance_factor = left_height - right_height
+
     def get_min(self):
         current = self
         while current.left is not None:
@@ -35,14 +57,25 @@ class BSTNode:
         while current.right is not None:
             current = current.right
         return current.val
-    def preorder(self, vals):
-        if self.val is not None:
-            vals.append(self.val)
-        if self.left is not None:
-            self.left.preorder(vals)
+    def reverse_postorder(self, vals):
         if self.right is not None:
-            self.right.preorder(vals)
+                self.right.reverse_postorder(vals)
+        if self.left is not None:
+            self.left.reverse_postorder(vals)
+        if self.val is not None:
+            vals.append((self.val, self.balance_factor))
         return vals
+    def get_average(self):
+        values = []
+        
+        def collect(node):
+            if node:
+                values.append(node.val)
+                collect(node.left)
+                collect(node.right)
+        
+        collect(self)
+        return round(sum(values) / len(values),2)            
     def getBalance(node):
         if not node:
             return 0
@@ -61,13 +94,27 @@ class BSTNode:
     
 bst = BSTNode()
 filename = input("filename:")
-with open(filename) as file:
-    nodes = [line.rstrip() for line in file]
+if (filename[-4:] != ".txt"):
+    filename += ".txt"
+try:
+    with open(filename) as file:
+        nodes = [int(line.rstrip()) for line in file]
+except:
+    print("\nProblem with file")
+    sys.exit()
 
-print("nodes: ", nodes)
+# print("nodes: ", nodes)
 for node in nodes:
     bst.insert(int(node))
-print("postorder: ", bst.preorder([]))
-print(bst.height)
+bst.calculate_balance_factors()
+tab = bst.reverse_postorder([])
+# print(tab)
+for i in range (len(tab)):
+    if (abs(tab[i][1])>1 ):
+        print(f"bal({tab[i][0]}) = {abs(tab[i][1])} (!AVL Violation)")
+    else:
+        print(f"bal({tab[i][0]}) = {abs(tab[i][1])} ")
+#print("preorder: ", tab)
 
-print(bst.check_avl())
+print(f"min : {bst.get_min()}, max : {bst.get_max()}, average : {bst.get_average()}")
+print("AVL : ",bst.check_avl())
